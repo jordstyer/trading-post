@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    " E ",
+    "PCP",
+    "PPP"
+  ],
+  "key": {
+    "E": { "item": "minecraft:emerald" },
+    "C": { "item": "minecraft:chest" },
+    "P": { "tag": "minecraft:planks" }
+  },
+  "result": {
+    "item": "trading_post:trading_post"
+  }
+}

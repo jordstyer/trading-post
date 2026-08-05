@@ -1,0 +1,77 @@
+{
+  "__comment": "A trading desk: drawer cabinet, overhanging worktop, a pigeonhole hutch at the back, an open manifest ledger and a brass stamp block. Built facing NORTH (-Z); the blockstate rotates it to the placed facing.",
+  "parent": "block/block",
+  "textures": {
+    "particle": "trading_post:block/trading_post_side",
+    "side": "trading_post:block/trading_post_side",
+    "front": "trading_post:block/trading_post_front",
+    "top": "trading_post:block/trading_post_top",
+    "hutch": "trading_post:block/trading_post_hutch",
+    "ledger": "trading_post:block/trading_post_ledger",
+    "brass": "trading_post:block/trading_post_brass"
+  },
+  "elements": [
+    {
+      "__comment": "Drawer cabinet, inset 1px so the worktop above it overhangs.",
+      "from": [1, 0, 1],
+      "to": [15, 8, 15],
+      "faces": {
+        "north": { "uv": [1, 8, 15, 16], "texture": "#front" },
+        "south": { "uv": [1, 8, 15, 16], "texture": "#side" },
+        "east":  { "uv": [1, 8, 15, 16], "texture": "#side" },
+        "west":  { "uv": [1, 8, 15, 16], "texture": "#side" },
+        "down":  { "uv": [1, 1, 15, 15], "texture": "#side" }
+      }
+    },
+    {
+      "__comment": "Worktop, full 16x16 footprint. Edge faces sample the top 2 rows of the side texture.",
+      "from": [0, 8, 0],
+      "to": [16, 10, 16],
+      "faces": {
+        "up":    { "uv": [0, 0, 16, 16], "texture": "#top" },
+        "down":  { "uv": [0, 0, 16, 16], "texture": "#side" },
+        "north": { "uv": [0, 0, 16, 2], "texture": "#side" },
+        "south": { "uv": [0, 0, 16, 2], "texture": "#side" },
+        "east":  { "uv": [0, 0, 16, 2], "texture": "#side" },
+        "west":  { "uv": [0, 0, 16, 2], "texture": "#side" }
+      }
+    },
+    {
+      "__comment": "Pigeonhole hutch along the back edge. Its north face is what the player sees.",
+      "from": [1, 10, 10],
+      "to": [15, 16, 15],
+      "faces": {
+        "north": { "uv": [1, 1, 15, 7], "texture": "#hutch" },
+        "south": { "uv": [1, 1, 15, 7], "texture": "#side" },
+        "east":  { "uv": [1, 1, 6, 7], "texture": "#side" },
+        "west":  { "uv": [1, 1, 6, 7], "texture": "#side" },
+        "up":    { "uv": [1, 1, 15, 6], "texture": "#side" },
+        "down":  { "uv": [1, 1, 15, 6], "texture": "#side" }
+      }
+    },
+    {
+      "__comment": "Open manifest ledger lying on the worktop.",
+      "from": [3, 10, 2],
+      "to": [9, 11, 8],
+      "faces": {
+        "up":    { "uv": [0, 0, 16, 16], "texture": "#ledger" },
+        "north": { "uv": [0, 0, 16, 2], "texture": "#ledger" },
+        "south": { "uv": [0, 0, 16, 2], "texture": "#ledger" },
+        "east":  { "uv": [0, 0, 16, 2], "texture": "#ledger" },
+        "west":  { "uv": [0, 0, 16, 2], "texture": "#ledger" }
+      }
+    },
+    {
+      "__comment": "Brass stamp block for franking outgoing orders.",
+      "from": [11, 10, 3],
+      "to": [14, 13, 6],
+      "faces": {
+        "up":    { "uv": [0, 0, 16, 16], "texture": "#brass" },
+        "north": { "uv": [0, 0, 16, 16], "texture": "#brass" },
+        "south": { "uv": [0, 0, 16, 16], "texture": "#brass" },
+        "east":  { "uv": [0, 0, 16, 16], "texture": "#brass" },
+        "west":  { "uv": [0, 0, 16, 16], "texture": "#brass" }
+      }
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+{
+  "variants": {
+    "": { "model": "trading_post:block/delivery_crate" }
+  }
+}

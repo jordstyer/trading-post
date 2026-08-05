@@ -1,0 +1,17 @@
+{
+  "block.trading_post.trading_post": "Trading Post",
+  "item.trading_post.trading_post": "Trading Post",
+  "block.trading_post.delivery_crate": "Delivery Crate",
+  "item.trading_post.delivery_crate": "Delivery Crate",
+  "itemGroup.trading_post": "Trading Post",
+  "menu.trading_post.trading_post": "Trading Post",
+  "container.trading_post.delivery_crate": "Delivery Crate",
+  "entity.trading_post.delivery_drone": "Freight Plane",
+  "entity.trading_post.delivery_package": "Airdrop",
+  "advancements.trading_post.root.title": "Trading Post",
+  "advancements.trading_post.root.description": "Obtain a Trading Post and open a line to the distant colonies",
+  "advancements.trading_post.first_order.title": "Open for Business",
+  "advancements.trading_post.first_order.description": "Place your first order with a colony",
+  "advancements.trading_post.first_delivery.title": "Special Delivery",
+  "advancements.trading_post.first_delivery.description": "Catch an airdrop from the Trading Post"
+}

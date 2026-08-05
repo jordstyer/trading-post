@@ -1,0 +1,17 @@
+{
+  "__comment": "Uses minecraft:impossible because vanilla has no 'placed an order' trigger; ModAdvancements.award grants it from TradeExecutor.buy. The criterion key must stay 'triggered' to match ModAdvancements.CRITERION.",
+  "parent": "trading_post:root",
+  "display": {
+    "icon": { "item": "minecraft:emerald" },
+    "title": { "translate": "advancements.trading_post.first_order.title" },
+    "description": { "translate": "advancements.trading_post.first_order.description" },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false
+  },
+  "criteria": {
+    "triggered": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

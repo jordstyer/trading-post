@@ -1,0 +1,81 @@
+{
+  "parent": "block/block",
+  "textures": {
+    "particle": "trading_post:block/delivery_crate_side",
+    "side": "trading_post:block/delivery_crate_side",
+    "top": "trading_post:block/delivery_crate_top",
+    "bottom": "trading_post:block/delivery_crate_bottom"
+  },
+  "elements": [
+    {
+      "__comment": "Crate body, inset 1px so the lid above it reads as an overhanging rim. Side UVs use rows 3-16 of the side texture (the planked body).",
+      "from": [1, 0, 1],
+      "to": [15, 13, 15],
+      "faces": {
+        "north": { "uv": [1, 3, 15, 16], "texture": "#side" },
+        "east":  { "uv": [1, 3, 15, 16], "texture": "#side" },
+        "south": { "uv": [1, 3, 15, 16], "texture": "#side" },
+        "west":  { "uv": [1, 3, 15, 16], "texture": "#side" },
+        "down":  { "uv": [1, 1, 15, 15], "texture": "#bottom" }
+      }
+    },
+    {
+      "__comment": "Lid, full 16x16 footprint. Side UVs use rows 0-3 of the side texture (the metal-banded rim).",
+      "from": [0, 13, 0],
+      "to": [16, 16, 16],
+      "faces": {
+        "north": { "uv": [0, 0, 16, 3], "texture": "#side" },
+        "east":  { "uv": [0, 0, 16, 3], "texture": "#side" },
+        "south": { "uv": [0, 0, 16, 3], "texture": "#side" },
+        "west":  { "uv": [0, 0, 16, 3], "texture": "#side" },
+        "up":    { "uv": [0, 0, 16, 16], "texture": "#top" },
+        "down":  { "uv": [0, 0, 16, 16], "texture": "#bottom" }
+      }
+    },
+    {
+      "__comment": "Corner posts. The body is inset 1px, so these stand proud of it and give the crate a framed silhouette instead of a flat cube. All four sample the side texture's own post column (x 0-2, rows 3-16).",
+      "from": [0, 0, 0],
+      "to": [2, 13, 2],
+      "faces": {
+        "north": { "uv": [0, 3, 2, 16], "texture": "#side" },
+        "west":  { "uv": [0, 3, 2, 16], "texture": "#side" },
+        "east":  { "uv": [0, 3, 2, 16], "texture": "#side" },
+        "south": { "uv": [0, 3, 2, 16], "texture": "#side" },
+        "down":  { "uv": [0, 0, 2, 2], "texture": "#bottom" }
+      }
+    },
+    {
+      "from": [14, 0, 0],
+      "to": [16, 13, 2],
+      "faces": {
+        "north": { "uv": [0, 3, 2, 16], "texture": "#side" },
+        "west":  { "uv": [0, 3, 2, 16], "texture": "#side" },
+        "east":  { "uv": [0, 3, 2, 16], "texture": "#side" },
+        "south": { "uv": [0, 3, 2, 16], "texture": "#side" },
+        "down":  { "uv": [0, 0, 2, 2], "texture": "#bottom" }
+      }
+    },
+    {
+      "from": [0, 0, 14],
+      "to": [2, 13, 16],
+      "faces": {
+        "north": { "uv": [0, 3, 2, 16], "texture": "#side" },
+        "west":  { "uv": [0, 3, 2, 16], "texture": "#side" },
+        "east":  { "uv": [0, 3, 2, 16], "texture": "#side" },
+        "south": { "uv": [0, 3, 2, 16], "texture": "#side" },
+        "down":  { "uv": [0, 0, 2, 2], "texture": "#bottom" }
+      }
+    },
+    {
+      "from": [14, 0, 14],
+      "to": [16, 13, 16],
+      "faces": {
+        "north": { "uv": [0, 3, 2, 16], "texture": "#side" },
+        "west":  { "uv": [0, 3, 2, 16], "texture": "#side" },
+        "east":  { "uv": [0, 3, 2, 16], "texture": "#side" },
+        "south": { "uv": [0, 3, 2, 16], "texture": "#side" },
+        "down":  { "uv": [0, 0, 2, 2], "texture": "#bottom" }
+      }
+    }
+  ]
+}

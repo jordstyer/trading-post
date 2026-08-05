@@ -1,0 +1,8 @@
+{
+  "__comment": "Lives under the minecraft namespace because it appends to minecraft:mineable/axe. replace=false so other mods' entries survive. Without this the blocks are not 'correct tool' for any tool, which means slow mining and (if requiresCorrectToolForDrops were set) no drops at all.",
+  "replace": false,
+  "values": [
+    "trading_post:trading_post",
+    "trading_post:delivery_crate"
+  ]
+}

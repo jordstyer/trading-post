@@ -1,0 +1,5 @@
+{
+  "__comment": "Intentionally empty: the crate is never obtainable as an item. Its contents are spilled by DeliveryCrateBlock.onRemove via Containers.dropContents, and the block itself removes itself once emptied. This file exists only so the block has a loot table and does not log a missing-table warning.",
+  "type": "minecraft:block",
+  "pools": []
+}

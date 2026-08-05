@@ -1,0 +1,17 @@
+{
+  "__comment": "Granted from DeliveryPackageEntity.deliver() when the buyer's airdrop touches down. See first_order.json for why this is an impossible criterion.",
+  "parent": "trading_post:first_order",
+  "display": {
+    "icon": { "item": "trading_post:delivery_crate" },
+    "title": { "translate": "advancements.trading_post.first_delivery.title" },
+    "description": { "translate": "advancements.trading_post.first_delivery.description" },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "triggered": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

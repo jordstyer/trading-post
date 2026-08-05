@@ -1,0 +1,21 @@
+{
+  "display": {
+    "icon": { "item": "trading_post:trading_post" },
+    "title": { "translate": "advancements.trading_post.root.title" },
+    "description": { "translate": "advancements.trading_post.root.description" },
+    "background": "minecraft:textures/block/stripped_oak_log.png",
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false
+  },
+  "criteria": {
+    "has_trading_post": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          { "items": ["trading_post:trading_post"] }
+        ]
+      }
+    }
+  }
+}
