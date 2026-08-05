@@ -14,8 +14,6 @@ import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.Containers;
 import net.minecraft.world.entity.Entity;
@@ -159,8 +157,8 @@ public class DeliveryPackageEntity extends Entity implements IEntityAdditionalSp
         if (serverLevel.getBlockEntity(target) instanceof DeliveryCrateBlockEntity crate) {
             crate.setPayload(payload);
         }
-        serverLevel.playSound(null, target, SoundEvents.WOOD_PLACE, SoundSource.NEUTRAL, 1.0f, 0.7f);
-        serverLevel.playSound(null, target, SoundEvents.CHEST_CLOSE, SoundSource.NEUTRAL, 0.5f, 0.8f);
+        // No landing sound on purpose: the touchdown thud read as too loud/intrusive in play.
+        // The crate's own chest open/close sounds (DeliveryCrateBlockEntity) carry the moment.
         awardDeliveryAdvancement(serverLevel);
         discard();
     }

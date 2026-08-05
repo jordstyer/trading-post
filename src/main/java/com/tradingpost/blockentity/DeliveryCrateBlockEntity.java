@@ -6,7 +6,11 @@ import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.ContainerHelper;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ChestMenu;
 import net.minecraft.world.item.ItemStack;
@@ -28,6 +32,8 @@ public class DeliveryCrateBlockEntity extends RandomizableContainerBlockEntity {
 
     private NonNullList<ItemStack> items = NonNullList.withSize(SLOTS, ItemStack.EMPTY);
     private boolean everFilled;
+    /** Live viewer count, so the lid sounds fire once per crate rather than once per player. */
+    private int openCount;
 
     public DeliveryCrateBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.DELIVERY_CRATE.get(), pos, state);
@@ -86,6 +92,39 @@ public class DeliveryCrateBlockEntity extends RandomizableContainerBlockEntity {
     @Override
     protected void setItems(NonNullList<ItemStack> items) {
         this.items = items;
+    }
+
+    /**
+     * Chest lid sounds. {@code ChestMenu}'s constructor calls {@code startOpen} and its
+     * {@code removed} calls {@code stopOpen}, so hooking here ties the sound to the menu actually
+     * opening rather than to any right-click on the block. Counting viewers means two players
+     * opening the same crate don't double up the sound, matching vanilla chest behaviour.
+     */
+    @Override
+    public void startOpen(Player player) {
+        if (level == null || player.isSpectator()) {
+            return;
+        }
+        if (openCount++ == 0) {
+            playLidSound(SoundEvents.CHEST_OPEN);
+        }
+    }
+
+    @Override
+    public void stopOpen(Player player) {
+        if (level == null || player.isSpectator()) {
+            return;
+        }
+        if (--openCount <= 0) {
+            openCount = 0;
+            playLidSound(SoundEvents.CHEST_CLOSE);
+        }
+    }
+
+    /** Same volume and pitch jitter vanilla chests use, so it blends in. */
+    private void playLidSound(SoundEvent sound) {
+        level.playSound(null, worldPosition, sound, SoundSource.BLOCKS,
+                0.5f, level.random.nextFloat() * 0.1f + 0.9f);
     }
 
     @Override
