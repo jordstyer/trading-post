@@ -60,7 +60,7 @@ public final class TradeExecutor {
         removeItem(player, Items.EMERALD, (int) quote.total());
         DeliveryService.deliverPurchase(player, item, quote.filledQty());
         entry.applyBuy(quote.filledQty());
-        confirmTrade(player);
+        playRegisterSound(player, false);
         ModAdvancements.award(player, ModAdvancements.FIRST_ORDER);
 
         finish(player, market, colony);
@@ -91,15 +91,26 @@ public final class TradeExecutor {
         removeItem(player, item, quote.filledQty());
         giveItem(player, Items.EMERALD, (int) Math.min(quote.total(), Integer.MAX_VALUE));
         entry.applySell(quote.filledQty());
-        confirmTrade(player);
+        playRegisterSound(player, true);
 
         finish(player, market, colony);
     }
 
-    /** Audible confirmation that an order went through. */
-    private static void confirmTrade(ServerPlayer player) {
-        player.level().playSound(null, player.blockPosition(), SoundEvents.VILLAGER_YES,
-                SoundSource.PLAYERS, 0.6f, 1.1f);
+    /**
+     * Cash-register "cha-ching" on a completed trade: a bell ding with a coin-like chime layered
+     * over it. Vanilla has no register sound, so this is the closest pairing available.
+     *
+     * <p>Sent via {@code playNotifySound}, which targets only this player's connection. A
+     * transaction confirmation is UI feedback about *your* order, so broadcasting it into the world
+     * (as the previous villager-grunt did) would just be noise for anyone standing nearby.
+     *
+     * @param earning true when selling - pitched slightly brighter so money coming in and money
+     *                going out don't sound identical.
+     */
+    private static void playRegisterSound(ServerPlayer player, boolean earning) {
+        float pitch = earning ? 1.3f : 1.1f;
+        player.playNotifySound(SoundEvents.NOTE_BLOCK_BELL.value(), SoundSource.PLAYERS, 0.5f, pitch);
+        player.playNotifySound(SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.PLAYERS, 0.35f, pitch + 0.2f);
     }
 
     /** The player must have this table's menu open (and still be within range of it) to trade. */
