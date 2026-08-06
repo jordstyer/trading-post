@@ -62,11 +62,65 @@ public final class DeliveryService {
      */
     private static final int MAX_CRATES_PER_DELIVERY = 12;
 
+    /** Range (blocks) that additional crates are scattered over - same vicinity, not shoulder to shoulder. */
+    private static final int SCATTER_MIN = 5;
+    private static final int SCATTER_MAX = 14;
+
+    /** How far above/below the search origin a column is probed for ground. */
+    private static final int COLUMN_SEARCH_HEIGHT = 6;
+
+    /** Crates in one order stay at least this far apart, so none land touching. */
+    private static final int MIN_CRATE_SEPARATION = 5;
+    /** Re-rolls allowed while looking for a well-separated spot before settling for any valid one. */
+    private static final int SCATTER_ATTEMPTS = 8;
+
     /** One crate's worth of goods and the spot it's bound for. */
     public record CrateLoad(BlockPos landing, List<ItemStack> items) {
     }
 
     private DeliveryService() {
+    }
+
+    /**
+     * Picks a landing spot for crate {@code index}, scattered around the player and kept clear of
+     * the spots already chosen for this order.
+     *
+     * <p>The first crate lands right by the player. Later ones search from a random point ringed
+     * around them, because searching from the player every time returns the nearest free block each
+     * round and packs the crates shoulder to shoulder. Random origins alone still let two crates
+     * land touching by chance, so candidates within {@link #MIN_CRATE_SEPARATION} of an
+     * already-claimed spot are rejected and re-rolled - except on the final attempt, where any
+     * valid spot beats dropping the crate from the order entirely.
+     */
+    private static BlockPos pickScatteredSpot(ServerLevel level, BlockPos playerPos, int index,
+                                               List<CrateLoad> chosen) {
+        for (int attempt = 0; attempt < SCATTER_ATTEMPTS; attempt++) {
+            BlockPos origin = playerPos;
+            if (index > 0) {
+                double angle = level.getRandom().nextDouble() * Math.PI * 2.0;
+                int dist = SCATTER_MIN + level.getRandom().nextInt(SCATTER_MAX - SCATTER_MIN + 1);
+                origin = origin.offset((int) Math.round(Math.cos(angle) * dist), 0,
+                        (int) Math.round(Math.sin(angle) * dist));
+            }
+            BlockPos candidate = findLandingSpot(level, origin);
+            if (candidate == null) {
+                continue;
+            }
+            boolean lastChance = attempt == SCATTER_ATTEMPTS - 1;
+            if (index == 0 || lastChance || isWellSeparated(candidate, chosen)) {
+                return candidate;
+            }
+        }
+        return null;
+    }
+
+    private static boolean isWellSeparated(BlockPos candidate, List<CrateLoad> chosen) {
+        for (CrateLoad load : chosen) {
+            if (load.landing().distSqr(candidate) < (double) MIN_CRATE_SEPARATION * MIN_CRATE_SEPARATION) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /** Frees a reserved spot. Safe to call for a position that was never reserved. */
@@ -113,14 +167,19 @@ public final class DeliveryService {
 
         // One landing spot per crate. findLandingSpot skips anything already in RESERVED, so
         // claiming each spot as we go is what makes the next call return a *different* block.
+        //
+        // Searching from the player every time would return the nearest free block each round and
+        // pack the crates shoulder to shoulder. Instead each crate after the first searches from a
+        // random point ringed around the player, so they come down scattered across the area rather
+        // than in a neat row.
         List<CrateLoad> loads = new ArrayList<>();
-        for (List<ItemStack> stacks : crateLoads) {
-            BlockPos spot = findLandingSpot(level, player.blockPosition());
+        for (int i = 0; i < crateLoads.size(); i++) {
+            BlockPos spot = pickScatteredSpot(level, player.blockPosition(), i, loads);
             if (spot == null) {
-                break;
+                continue;
             }
             RESERVED.add(spot);
-            loads.add(new CrateLoad(spot, stacks));
+            loads.add(new CrateLoad(spot, crateLoads.get(i)));
         }
 
         if (loads.isEmpty()) {
@@ -328,11 +387,23 @@ public final class DeliveryService {
         return null;
     }
 
+    /**
+     * Finds a landable block in a column, searching outward from the player's own level rather
+     * than scanning top-down, so the nearest-in-height match wins.
+     *
+     * <p>The band is deliberately wider than the original +1/-3: crates after the first are
+     * scattered up to {@link #SCATTER_MAX} blocks away (see {@code deliverPurchase}), and on any
+     * sloped ground a column that far out sits well outside a four-block window - which would
+     * fail to place, quietly shrinking the airdrop and pushing goods into the player's inventory
+     * instead.
+     */
     private static BlockPos findGroundAtColumn(ServerLevel level, int x, int y, int z) {
-        for (int dy = 1; dy >= -3; dy--) {
-            BlockPos landingPos = new BlockPos(x, y + dy, z);
-            if (isValidLanding(level, landingPos)) {
-                return landingPos;
+        for (int step = 0; step <= COLUMN_SEARCH_HEIGHT; step++) {
+            for (int dy : (step == 0 ? new int[]{0} : new int[]{-step, step})) {
+                BlockPos landingPos = new BlockPos(x, y + dy, z);
+                if (isValidLanding(level, landingPos)) {
+                    return landingPos;
+                }
             }
         }
         return null;

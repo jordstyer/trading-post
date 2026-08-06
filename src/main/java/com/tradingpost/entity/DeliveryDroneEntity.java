@@ -39,8 +39,6 @@ import java.util.UUID;
  */
 public class DeliveryDroneEntity extends Entity implements IEntityAdditionalSpawnData {
 
-    /** Ticks between engine-drone plays; roughly the length of the sound itself. */
-    private static final int ENGINE_SOUND_INTERVAL = 40;
     /** Ticks between successive crate drops, so a multi-crate order strings out behind the plane. */
     private static final int RELEASE_INTERVAL = 14;
 
@@ -126,13 +124,9 @@ public class DeliveryDroneEntity extends Entity implements IEntityAdditionalSpaw
             return;
         }
 
-        // Engine drone. Volume is deliberately far above 1: Minecraft attenuates sound over
-        // roughly 16 * volume blocks, and the plane cruises 40+ blocks up, so a normal volume
-        // would simply never reach the ground.
-        if (elapsedTicks % ENGINE_SOUND_INTERVAL == 0) {
-            level().playSound(null, getX(), getY(), getZ(), SoundEvents.MINECART_INSIDE,
-                    SoundSource.NEUTRAL, 3.0f, 0.55f);
-        }
+        // No engine drone: the minecart rumble that stood in for one read as exactly that - a
+        // minecart - and was intrusive on a long flight. The plane flies silently; the chute
+        // deploy in releaseNext is the only cue.
 
         // Drops begin at the midpoint (directly overhead) and then every RELEASE_INTERVAL ticks,
         // so a multi-crate order trails out behind the plane instead of stacking up in one spot.

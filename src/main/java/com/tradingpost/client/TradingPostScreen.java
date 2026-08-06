@@ -38,6 +38,14 @@ public class TradingPostScreen extends AbstractContainerScreen<TradingPostMenu> 
             new ResourceLocation(TradingPostMod.MODID, "textures/gui/trading_post_background.png");
     private static final int BG_TEX_SIZE = 512;
 
+    /**
+     * Currency suffix on every price. Kept to a single letter rather than the full word: the
+     * row-list price column is right-aligned in a narrow gutter, and the Pay/Earn lines start
+     * ~150px into a 326px panel, so "4096 emeralds for 4096" would run off the edge on a large
+     * order. The header already reads "Emeralds: N", so the unit is never ambiguous.
+     */
+    private static final String CURRENCY = "e";
+
     // Layout, relative to the GUI's top-left corner (leftPos, topPos).
     private static final int LIST_X = 8;
     private static final int FILTERS_Y = 36;
@@ -521,7 +529,7 @@ public class TradingPostScreen extends AbstractContainerScreen<TradingPostMenu> 
             g.drawString(font, displayName(e), baseX + 22, ry + 2, 0xFFFFFF, false);
             g.drawString(font, row.colonyDisplayName(), baseX + 22, ry + 11, 0xFF8A93A8, false);
 
-            String priceStr = unitPrice(e) + "g";
+            String priceStr = unitPrice(e) + CURRENCY;
             g.drawString(font, priceStr, baseX + LIST_W - 6 - font.width(priceStr), ry + 2, 0xFFD54A, false);
             String stockStr = "x" + e.currentStock();
             g.drawString(font, stockStr, baseX + LIST_W - 6 - font.width(stockStr), ry + 11, 0xFF8A93A8, false);
@@ -561,7 +569,7 @@ public class TradingPostScreen extends AbstractContainerScreen<TradingPostMenu> 
 
         String header = displayName(e) + "  -  " + row.colonyDisplayName();
         g.drawString(font, header, x, y, 0xFFFFFF, false);
-        g.drawString(font, "Unit " + unitPrice(e) + "g   Stock " + e.currentStock()
+        g.drawString(font, "Unit " + unitPrice(e) + CURRENCY + "   Stock " + e.currentStock()
                 + " (floor " + e.minStock() + " / cap " + e.maxStock() + ")", x, y + PANEL_INFO_Y, 0xFF8A93A8, false);
 
         // Quantity readout: "N = S stacks + R".
@@ -576,8 +584,8 @@ public class TradingPostScreen extends AbstractContainerScreen<TradingPostMenu> 
         MarketPricing.Quote sell = sellQuote(e, Math.min(quantity, owned));
 
         int textX = x + 150;
-        g.drawString(font, "Pay " + buy.total() + "g for " + buy.filledQty(), textX, y + PANEL_BUTTONS_Y + 1, 0xFFD54A, false);
-        g.drawString(font, "Earn " + sell.total() + "g for " + sell.filledQty(), textX, y + PANEL_BUTTONS_Y + 11, 0x55FF55, false);
+        g.drawString(font, "Pay " + buy.total() + CURRENCY + " for " + buy.filledQty(), textX, y + PANEL_BUTTONS_Y + 1, 0xFFD54A, false);
+        g.drawString(font, "Earn " + sell.total() + CURRENCY + " for " + sell.filledQty(), textX, y + PANEL_BUTTONS_Y + 11, 0x55FF55, false);
     }
 
     private void renderTooltips(GuiGraphics g, int mouseX, int mouseY) {
