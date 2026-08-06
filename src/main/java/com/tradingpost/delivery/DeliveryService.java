@@ -54,6 +54,18 @@ public final class DeliveryService {
      */
     private static final Set<BlockPos> RESERVED = ConcurrentHashMap.newKeySet();
 
+    /**
+     * Ceiling on crates per order, so a pathological item can't carpet the area in planes and
+     * crates. With the catalog's 16- and 64-stack items and {@code MAX_QUANTITY_PER_TRADE} this is
+     * never reached (a full 4096-unit order of a 64-stack item is 3 crates); it only bites for a
+     * modded 1-stack item, where the remainder is handed to the player instead.
+     */
+    private static final int MAX_CRATES_PER_DELIVERY = 12;
+
+    /** One crate's worth of goods and the spot it's bound for. */
+    public record CrateLoad(BlockPos landing, List<ItemStack> items) {
+    }
+
     private DeliveryService() {
     }
 
@@ -94,18 +106,39 @@ public final class DeliveryService {
      */
     public static void deliverPurchase(ServerPlayer player, Item item, int quantity) {
         ServerLevel level = player.serverLevel();
-        BlockPos landingPos = findLandingSpot(level, player.blockPosition());
-        if (landingPos == null) {
+
+        // An order too big for one crate becomes several - the plane drops one per crate rather
+        // than cramming everything into a single container.
+        List<List<ItemStack>> crateLoads = buildCrateLoads(item, quantity);
+
+        // One landing spot per crate. findLandingSpot skips anything already in RESERVED, so
+        // claiming each spot as we go is what makes the next call return a *different* block.
+        List<CrateLoad> loads = new ArrayList<>();
+        for (List<ItemStack> stacks : crateLoads) {
+            BlockPos spot = findLandingSpot(level, player.blockPosition());
+            if (spot == null) {
+                break;
+            }
+            RESERVED.add(spot);
+            loads.add(new CrateLoad(spot, stacks));
+        }
+
+        if (loads.isEmpty()) {
             TradeExecutor.giveItem(player, item, quantity);
             return;
         }
 
-        // Claim the spot immediately so a second purchase made while this one is still in the air
-        // can't scan the same (still empty) block and double-book it. Released on touchdown, or on
-        // any failure path below.
-        RESERVED.add(landingPos);
+        // Anything the crates don't carry goes straight to the player, so neither a cramped landing
+        // area nor the MAX_CRATES_PER_DELIVERY cap can silently swallow part of a paid-for order.
+        int airlifted = loads.stream()
+                .flatMap(load -> load.items().stream())
+                .mapToInt(ItemStack::getCount)
+                .sum();
+        if (airlifted < quantity) {
+            TradeExecutor.giveItem(player, item, quantity - airlifted);
+        }
 
-        List<ItemStack> payload = buildPayload(item, quantity);
+        BlockPos landingPos = loads.get(0).landing();
         int halfLength = effectiveHalfLength(level);
         java.util.UUID buyerId = player.getUUID();
 
@@ -123,16 +156,16 @@ public final class DeliveryService {
                     // must never be touched. (The player disconnecting doesn't matter - the
                     // delivery is a world event by this point, not tied to their session.)
                     if (level.getServer().isStopped()) {
-                        releaseLandingSpot(landingPos);
+                        loads.forEach(l -> releaseLandingSpot(l.landing()));
                         return;
                     }
                     int flightTicks = (int) Math.ceil((2.0 * halfLength) / TradingPostConfig.DELIVERY_FLIGHT_SPEED.get());
-                    DeliveryDroneEntity.spawn(level, landingPos, payload, choice.headingRadians, choice.altitude,
+                    DeliveryDroneEntity.spawn(level, landingPos, loads, choice.headingRadians, choice.altitude,
                             halfLength, flightTicks, TradingPostConfig.DELIVERY_FALL_TICKS.get(), buyerId);
                 }, level.getServer())
                 .exceptionally(t -> {
                     LOGGER.error("Delivery flight-path planning failed; giving the purchase directly instead", t);
-                    releaseLandingSpot(landingPos);
+                    loads.forEach(l -> releaseLandingSpot(l.landing()));
                     level.getServer().execute(() -> TradeExecutor.giveItem(player, item, quantity));
                     return null;
                 });
@@ -238,30 +271,31 @@ public final class DeliveryService {
                 level, chunkSource.randomState());
     }
 
-    /** Splits {@code quantity} into crate slots, upsizing past normal stack limits if it has to. */
-    private static List<ItemStack> buildPayload(Item item, int quantity) {
+    /**
+     * Splits an order into crate-sized loads, every stack at its normal maximum size.
+     *
+     * <p>The original version packed anything larger than one crate into {@code SLOTS} deliberately
+     * *oversized* stacks (32 stacks of planks became 27 stacks of 75). Nothing was lost on arrival,
+     * but stacks above an item's real limit are fragile once a player starts moving them - slot and
+     * quick-move clamping can silently truncate them - and it simply looked wrong. Overflowing into
+     * additional crates is both safer and what a player expects to see: a bigger order means more
+     * crates coming off the plane.
+     */
+    private static List<List<ItemStack>> buildCrateLoads(Item item, int quantity) {
         int maxStack = Math.max(1, item.getMaxStackSize());
-        int stacksNeeded = (quantity + maxStack - 1) / maxStack;
-        List<ItemStack> stacks = new ArrayList<>();
+        List<List<ItemStack>> loads = new ArrayList<>();
+        List<ItemStack> current = new ArrayList<>();
+        int remaining = quantity;
 
-        if (stacksNeeded <= DeliveryCrateBlockEntity.SLOTS) {
-            int remaining = quantity;
-            while (remaining > 0) {
-                int count = Math.min(maxStack, remaining);
-                stacks.add(new ItemStack(item, count));
-                remaining -= count;
-            }
-        } else {
-            int base = quantity / DeliveryCrateBlockEntity.SLOTS;
-            int extra = quantity % DeliveryCrateBlockEntity.SLOTS;
-            for (int i = 0; i < DeliveryCrateBlockEntity.SLOTS; i++) {
-                int count = base + (i < extra ? 1 : 0);
-                if (count > 0) {
-                    stacks.add(new ItemStack(item, count));
-                }
+        while (remaining > 0 && loads.size() < MAX_CRATES_PER_DELIVERY) {
+            current.add(new ItemStack(item, Math.min(maxStack, remaining)));
+            remaining -= Math.min(maxStack, remaining);
+            if (current.size() == DeliveryCrateBlockEntity.SLOTS || remaining <= 0) {
+                loads.add(current);
+                current = new ArrayList<>();
             }
         }
-        return stacks;
+        return loads;
     }
 
     /**
