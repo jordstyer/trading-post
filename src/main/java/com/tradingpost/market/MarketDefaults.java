@@ -1,13 +1,17 @@
 package com.tradingpost.market;
 
+import com.mojang.logging.LogUtils;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraftforge.common.Tags;
+import net.minecraftforge.registries.ForgeRegistries;
+import org.slf4j.Logger;
 
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Declares which colonies exist and what they trade, as tag rules rather than a fixed item list -
@@ -57,12 +61,64 @@ public final class MarketDefaults {
         }
     }
 
+    private static final Logger LOGGER = LogUtils.getLogger();
+
     private MarketDefaults() {
     }
 
     public static List<Colony> createDefaultColonies() {
-        return CatalogScanner.scan(List.of(
+        List<Colony> colonies = CatalogScanner.scan(List.of(
                 woodcutters(), desertTraders(), stonemasons(), minersGuild(), farmersCollective(), oceanTraders()));
+        applyOverrides(colonies);
+        return colonies;
+    }
+
+    /**
+     * Folds {@code data/trading_post/market_overrides/*.json} (see {@link MarketOverrideManager})
+     * on top of the tag-scanned/curated catalog: this runs last, so a datapack override always wins
+     * over whatever the scan found. Invalid entries (unknown colony, unknown item, or a brand-new
+     * item missing price/stock) are logged and skipped rather than failing the whole catalog - one
+     * bad line in someone's datapack shouldn't take down the market.
+     *
+     * <p>This only shapes what a colony's <em>default</em> entry looks like. It has no way to reach
+     * back into an already-saved world: {@code MarketSavedData.mergeDefaults} only backfills items a
+     * save doesn't have yet and never touches ones it does (see that class for why), and this method
+     * runs upstream of that same call - so editing a price here changes what new items/new worlds
+     * start at, never what a player's already-saved market is currently charging.
+     */
+    private static void applyOverrides(List<Colony> colonies) {
+        Map<String, Colony> byId = colonies.stream().collect(Collectors.toMap(Colony::getId, c -> c));
+
+        for (MarketOverride override : MarketOverrideManager.INSTANCE.getOverrides()) {
+            Colony colony = byId.get(override.colonyId());
+            if (colony == null) {
+                LOGGER.warn("Market override references unknown colony '{}' - skipping {}",
+                        override.colonyId(), override.itemId());
+                continue;
+            }
+            Item item = ForgeRegistries.ITEMS.getValue(override.itemId());
+            if (item == null || item == Items.AIR) {
+                LOGGER.warn("Market override references unknown item '{}' in colony '{}' - skipping",
+                        override.itemId(), override.colonyId());
+                continue;
+            }
+
+            MarketEntry existing = colony.getEntry(item);
+            if (existing == null) {
+                if (override.price() == null || override.stock() == null) {
+                    LOGGER.warn("Market override adds new item '{}' to '{}' but is missing price or "
+                                    + "stock (both are required for a new item) - skipping",
+                            override.itemId(), override.colonyId());
+                    continue;
+                }
+                colony.withEntry(item, MarketEntry.atBaseline(
+                        Math.max(1, override.stock()), Math.max(0.0001, override.price())));
+            } else {
+                int stock = override.stock() != null ? Math.max(1, override.stock()) : existing.getBaseStock();
+                double price = override.price() != null ? Math.max(0.0001, override.price()) : existing.getBasePrice();
+                colony.withEntry(item, MarketEntry.atBaseline(stock, price));
+            }
+        }
     }
 
     private static CatalogScanner.ColonyBlueprint woodcutters() {
