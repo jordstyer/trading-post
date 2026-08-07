@@ -54,15 +54,27 @@ public class TradingPostMenu extends AbstractContainerMenu {
         }
     }
 
-    /** Client-side: constructed by the {@code IContainerFactory} registered in {@link ModMenus}. */
+    /**
+     * Client-side: constructed by the {@code IContainerFactory} registered in {@link ModMenus}.
+     *
+     * <p>Only reads a {@code BlockPos} - the extra-data buffer this comes from
+     * ({@code NetworkHooks.openScreen}) is hard-capped at 32,600 bytes, and the real catalog runs
+     * to roughly 90-100KB, so it can never travel this way (see {@link com.tradingpost.network.S2COpenMarketPacket}
+     * for the failure this used to cause). The menu opens with an empty list; {@link #loadMarket}
+     * fills it in moments later when that packet arrives, which is normally imperceptible but does
+     * mean the list is briefly empty on the very first frame.
+     */
     public TradingPostMenu(int containerId, Inventory playerInventory, FriendlyByteBuf buf) {
         super(ModMenus.TRADING_POST_MENU.get(), containerId);
         this.pos = buf.readBlockPos();
         this.access = ContainerLevelAccess.create(playerInventory.player.level(), pos);
+    }
 
-        MarketNetworking.Market market = MarketNetworking.readMarket(buf);
+    /** Populates the menu from {@link com.tradingpost.network.S2COpenMarketPacket}. */
+    public void loadMarket(MarketNetworking.Market market) {
         this.minPriceFactor = market.minPriceFactor();
         this.maxPriceFactor = market.maxPriceFactor();
+        colonies.clear();
         for (MarketNetworking.ColonySnapshot snapshot : market.colonies()) {
             colonies.put(snapshot.id(), snapshot);
         }

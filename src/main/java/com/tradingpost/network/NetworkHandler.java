@@ -25,5 +25,6 @@ public final class NetworkHandler {
         CHANNEL.registerMessage(id++, C2SBuyPacket.class, C2SBuyPacket::encode, C2SBuyPacket::decode, C2SBuyPacket::handle);
         CHANNEL.registerMessage(id++, C2SSellPacket.class, C2SSellPacket::encode, C2SSellPacket::decode, C2SSellPacket::handle);
         CHANNEL.registerMessage(id++, S2CSyncMarketPacket.class, S2CSyncMarketPacket::encode, S2CSyncMarketPacket::decode, S2CSyncMarketPacket::handle);
+        CHANNEL.registerMessage(id++, S2COpenMarketPacket.class, S2COpenMarketPacket::encode, S2COpenMarketPacket::decode, S2COpenMarketPacket::handle);
     }
 }

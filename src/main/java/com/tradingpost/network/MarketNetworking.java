@@ -68,18 +68,29 @@ public final class MarketNetworking {
         return TradingPostConfig.MAX_PRICE_FACTOR.get();
     }
 
-    // --- full market (sent when the menu opens) --------------------------------------------
+    // --- full market (sent via S2COpenMarketPacket right after the menu opens - NOT through
+    // NetworkHooks.openScreen's extra-data buffer, which caps at 32,600 bytes and is far too
+    // small for the real catalog; see that packet's javadoc) -------------------------------
 
-    public static void writeMarket(FriendlyByteBuf buf, Collection<Colony> colonies) {
-        buf.writeDouble(minPriceFactor());
-        buf.writeDouble(maxPriceFactor());
-        buf.writeVarInt(colonies.size());
+    /** Builds the wire-format snapshot of every colony, for {@link com.tradingpost.network.S2COpenMarketPacket}. */
+    public static Market currentMarket(Collection<Colony> colonies) {
+        List<ColonySnapshot> snapshots = new ArrayList<>(colonies.size());
         for (Colony colony : colonies) {
-            writeColonySnapshot(buf, snapshot(colony));
+            snapshots.add(snapshot(colony));
+        }
+        return new Market(minPriceFactor(), maxPriceFactor(), snapshots);
+    }
+
+    public static void writeMarketBody(FriendlyByteBuf buf, Market market) {
+        buf.writeDouble(market.minPriceFactor());
+        buf.writeDouble(market.maxPriceFactor());
+        buf.writeVarInt(market.colonies().size());
+        for (ColonySnapshot snapshot : market.colonies()) {
+            writeColonySnapshot(buf, snapshot);
         }
     }
 
-    public static Market readMarket(FriendlyByteBuf buf) {
+    public static Market readMarketBody(FriendlyByteBuf buf) {
         double minFactor = buf.readDouble();
         double maxFactor = buf.readDouble();
         int count = buf.readVarInt();
