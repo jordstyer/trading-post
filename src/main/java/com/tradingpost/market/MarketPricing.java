@@ -49,6 +49,11 @@ public final class MarketPricing {
     }
 
     /**
+     * <p><b>Caution:</b> with the economy anchored at 1 emerald per 16 logs, real unit prices run
+     * 0.0625 to 1.5, so this rounds nearly every rarity tier to an identical "1". It is not usable
+     * as a rarity signal - the UI quotes a 64-unit lot instead (see {@code TradingPostScreen}).
+     * Prefer {@link #unitPriceExact}, or a quote, for anything a player reads.
+     *
      * Per-unit price in whole emeralds at a given stock level, for display purposes (the row list
      * and detail panel). Rounded to the nearest emerald and floored at 1 so nothing ever *displays*
      * as free - this is only an indicative label though, not the real charge: for a cheap bulk item

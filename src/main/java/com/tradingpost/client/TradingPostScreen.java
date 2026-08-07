@@ -46,6 +46,14 @@ public class TradingPostScreen extends AbstractContainerScreen<TradingPostMenu> 
      */
     private static final String CURRENCY = "e";
 
+    /**
+     * Lot size every listed price is quoted for. 64 keeps the tier ladder in whole emeralds and
+     * matches how players actually buy - see {@link #lotPrice} for why per-unit prices were
+     * unreadable. Items that stack smaller than this still get a valid quote; it just spans more
+     * than one stack of them.
+     */
+    private static final int PRICE_QUANTITY = 64;
+
     // Layout, relative to the GUI's top-left corner (leftPos, topPos).
     private static final int LIST_X = 8;
     private static final int FILTERS_Y = 36;
@@ -254,9 +262,22 @@ public class TradingPostScreen extends AbstractContainerScreen<TradingPostMenu> 
                 e.currentStock(), qty, menu.getMinPriceFactor(), menu.getMaxPriceFactor());
     }
 
-    private int unitPrice(MarketNetworking.EntrySnapshot e) {
-        return MarketPricing.unitPrice(e.minStock(), e.baseStock(), e.maxStock(), e.basePrice(),
-                e.currentStock(), menu.getMinPriceFactor(), menu.getMaxPriceFactor());
+    /**
+     * Indicative price for {@link #PRICE_QUANTITY} units, which is what the list actually shows.
+     *
+     * <p>A per-unit figure is useless here: the economy is anchored at 1 emerald per 16 logs, so
+     * real unit prices run 0.0625 to 1.5, and rounding those to whole emeralds collapsed every
+     * tier from ABUNDANT through PRECIOUS into an identical "1e" - a 16x price range rendered as
+     * one number, with no way to tell a log from a diamond block. Quoting a bulk lot instead keeps
+     * the numbers whole *and* spreads the tiers into a legible 4/8/16/32/64/96 ladder.
+     *
+     * <p>Indicative, not exact: buying in bulk walks the price up as stock drains, so the real
+     * total comes from {@link #buyQuote}. The Pay/Earn lines are the authoritative figures.
+     */
+    private int lotPrice(MarketNetworking.EntrySnapshot e) {
+        double unit = MarketPricing.unitPriceExact(e.minStock(), e.baseStock(), e.maxStock(),
+                e.basePrice(), e.currentStock(), menu.getMinPriceFactor(), menu.getMaxPriceFactor());
+        return (int) Math.max(1, Math.round(unit * PRICE_QUANTITY));
     }
 
     // --- quantity syncing (slider <-> number box) ------------------------------------------
@@ -529,7 +550,7 @@ public class TradingPostScreen extends AbstractContainerScreen<TradingPostMenu> 
             g.drawString(font, displayName(e), baseX + 22, ry + 2, 0xFFFFFF, false);
             g.drawString(font, row.colonyDisplayName(), baseX + 22, ry + 11, 0xFF8A93A8, false);
 
-            String priceStr = unitPrice(e) + CURRENCY;
+            String priceStr = lotPrice(e) + CURRENCY + "/" + PRICE_QUANTITY;
             g.drawString(font, priceStr, baseX + LIST_W - 6 - font.width(priceStr), ry + 2, 0xFFD54A, false);
             String stockStr = "x" + e.currentStock();
             g.drawString(font, stockStr, baseX + LIST_W - 6 - font.width(stockStr), ry + 11, 0xFF8A93A8, false);
@@ -569,7 +590,7 @@ public class TradingPostScreen extends AbstractContainerScreen<TradingPostMenu> 
 
         String header = displayName(e) + "  -  " + row.colonyDisplayName();
         g.drawString(font, header, x, y, 0xFFFFFF, false);
-        g.drawString(font, "Unit " + unitPrice(e) + CURRENCY + "   Stock " + e.currentStock()
+        g.drawString(font, PRICE_QUANTITY + " for " + lotPrice(e) + CURRENCY + "   Stock " + e.currentStock()
                 + " (floor " + e.minStock() + " / cap " + e.maxStock() + ")", x, y + PANEL_INFO_Y, 0xFF8A93A8, false);
 
         // Quantity readout: "N = S stacks + R".
