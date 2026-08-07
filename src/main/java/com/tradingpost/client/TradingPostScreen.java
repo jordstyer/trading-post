@@ -99,20 +99,37 @@ public class TradingPostScreen extends AbstractContainerScreen<TradingPostMenu> 
         this.imageHeight = 316;
     }
 
+    /**
+     * Set the moment {@link #buildWidgets} runs against real data, so a later reaction (see
+     * {@link #render}) can tell "menu just opened, still empty" apart from "market data has
+     * actually loaded" and rebuild exactly once when it does.
+     */
+    private int builtForDataVersion = -1;
+
     @Override
     protected void init() {
         super.init();
+        // The menu opens with an empty colony list - real data arrives moments later via
+        // S2COpenMarketPacket (see that class for why it isn't available this early: the old
+        // synchronous approach is what caused the menu to fail to open at all on a large catalog).
+        // Building here still gives correct (if momentarily colony-filter-less) widget positions;
+        // render() below rebuilds for real once menu.getDataVersion() actually changes.
+        builtForDataVersion = menu.getDataVersion();
         buildWidgets();
-        // Select the first item on open so the trade controls are immediately live (the slider and
-        // quantity box do nothing until something is selected).
-        if (selectedItemId == null) {
-            List<TradingPostMenu.Row> rows = menu.getAllRows();
-            if (!rows.isEmpty()) {
-                TradingPostMenu.Row first = rows.get(0);
-                selectedColonyId = first.colonyId();
-                selectedItemId = first.entry().itemId();
-                setQuantity(Math.min(64, maxTradable()));
-            }
+        selectFirstRowIfNone();
+    }
+
+    /** Select the first item so the trade controls are immediately live, if nothing is picked yet. */
+    private void selectFirstRowIfNone() {
+        if (selectedItemId != null) {
+            return;
+        }
+        List<TradingPostMenu.Row> rows = menu.getAllRows();
+        if (!rows.isEmpty()) {
+            TradingPostMenu.Row first = rows.get(0);
+            selectedColonyId = first.colonyId();
+            selectedItemId = first.entry().itemId();
+            setQuantity(Math.min(64, maxTradable()));
         }
     }
 
@@ -435,6 +452,20 @@ public class TradingPostScreen extends AbstractContainerScreen<TradingPostMenu> 
         }
         if (quantityBox != null) {
             quantityBox.tick();
+        }
+
+        // Real market data lands a moment after the menu opens (see init()'s comment). When it
+        // does, the colony set the filter buttons were built from is stale - rebuild once, right
+        // then, rather than leaving the player looking at a menu with no filters and nothing
+        // selected until they close and reopen it.
+        if (menu.getDataVersion() != builtForDataVersion) {
+            builtForDataVersion = menu.getDataVersion();
+            String searchText = searchBox != null ? searchBox.getValue() : "";
+            buildWidgets();
+            if (searchBox != null) {
+                searchBox.setValue(searchText);
+            }
+            selectFirstRowIfNone();
         }
     }
 

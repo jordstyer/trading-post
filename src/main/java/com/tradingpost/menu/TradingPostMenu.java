@@ -38,6 +38,15 @@ public class TradingPostMenu extends AbstractContainerMenu {
     private double minPriceFactor = 0.5;
     private double maxPriceFactor = 2.0;
 
+    /**
+     * Bumped only by {@link #loadMarket}, never by {@link #updateColony}: the screen watches this
+     * to know when the *set* of colonies (and therefore its filter buttons) actually changed, as
+     * opposed to a single colony's price/stock updating after a trade - which shouldn't disrupt
+     * whatever the player is doing (typed search text, current selection) by rebuilding the whole
+     * widget tree.
+     */
+    private int dataVersion = 0;
+
     /** Server-side: constructed by {@link com.tradingpost.blockentity.TradingPostBlockEntity#createMenu}. */
     public TradingPostMenu(int containerId, Inventory playerInventory, BlockPos pos) {
         super(ModMenus.TRADING_POST_MENU.get(), containerId);
@@ -78,6 +87,12 @@ public class TradingPostMenu extends AbstractContainerMenu {
         for (MarketNetworking.ColonySnapshot snapshot : market.colonies()) {
             colonies.put(snapshot.id(), snapshot);
         }
+        dataVersion++;
+    }
+
+    /** See {@link #dataVersion}. */
+    public int getDataVersion() {
+        return dataVersion;
     }
 
     public BlockPos getPos() {
